@@ -353,10 +353,20 @@ func setQuota(name string, quota string) error {
 
 // Remove deletes the dataset, filesystem and the cache for the given id.
 func (d *Driver) Remove(id string) error {
+	var cleanCache = d.Exists(id)
 	name := d.zfsPath(id)
 	dataset := zfs.Dataset{Name: name}
 	err := dataset.Destroy(zfs.DestroyRecursive)
-	if err == nil {
+	if err != nil {
+		cleanCache = false
+		if zfsError, ok := err.(*zfs.Error); ok {
+			if strings.HasSuffix(zfsError.Stderr, "dataset does not exist\n") {
+				cleanCache = true
+				err = nil
+			}
+		}
+	}
+	if cleanCache {
 		d.Lock()
 		delete(d.filesystemsCache, name)
 		d.Unlock()
