@@ -1,0 +1,5 @@
+docker-ce (5:1.5-2-0~debian-bullseye) bullseye; urgency=low
+
+  * Version: 20.10.0-dev
+
+ -- Docker <support@docker.com>  Tue, 16 Jul 2019 17:26:21 -0300
