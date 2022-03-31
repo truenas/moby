@@ -7,7 +7,7 @@ TARGET_ARCH = $(shell dpkg-architecture -qDEB_TARGET_ARCH)
 export GOPROXY=direct
 export GO111MODULE=off
 export GOPATH=/go
-export GOROOT=/usr/local/go
+# export GOROOT=/usr/local/go
 # export PATH=$PATH:/usr/local/go/bin
 
 # force packages to be built with xz compression, as Ubuntu 21.10 and up use
@@ -18,11 +18,6 @@ override_dh_builddeb:
 override_dh_auto_clean:
 
 override_dh_auto_build:
-	# install go 1.16
-	curl https://dl.google.com/go/go1.16.4.linux-amd64.tar.gz -o /tmp/go.tar.gz
-	tar -C /tmp -xvf /tmp/go.tar.gz
-	mv /tmp/go /usr/local/
-	ln -s /usr/local/go/bin/go /usr/bin/go
 	# export PATH=$GOROOT/bin:$PATH
 
 	# Build the daemon and dependencies
