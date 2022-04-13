@@ -65,7 +65,11 @@ func (c *command) Run(arg ...string) ([][]string, error) {
 	output := make([][]string, len(lines))
 
 	for i, l := range lines {
-		output[i] = strings.Fields(l)
+		if len(arg) > 0 && arg[0] == "list" {
+			output[i] = strings.Split(l, "\t")
+		} else {
+			output[i] = strings.Fields(l)
+		}
 	}
 
 	return output, nil
