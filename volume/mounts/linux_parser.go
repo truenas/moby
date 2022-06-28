@@ -119,7 +119,7 @@ func (p *linuxParser) validateMountConfigImpl(mnt *mount.Mount, validateBindSour
 		if err != nil {
 			return err
 		}
-		if middleware.CanVerifyLockedvolumes() {
+		if middleware.CanVerifyLockedVolumes() {
 			err := lockedpathValidation(mnt.Source)
 			if err != nil {
 				return err
