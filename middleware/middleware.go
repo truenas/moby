@@ -68,7 +68,7 @@ func socketCommunication(ctx context.Context, conn *websocket.Conn,
 func handleSocketCommunication(ctx context.Context, conn *websocket.Conn, data map[string]interface{}) (map[string]interface{}, error) {
 	response := make(chan map[string]interface{})
 	err := make(chan error)
-	ctx, cancel := context.WithTimeout(ctx, time_out_limit)
+	ctx, cancel := context.WithTimeout(ctx, timeoutLimit)
 	defer cancel()
 	go socketCommunication(ctx, conn, data, response, err)
 	for {
@@ -145,18 +145,18 @@ func defaultInitialize() error {
 }
 
 func Initialize(ctx context.Context, username string, password string) error {
-	if client_config == nil {
-		client_config = &config{}
-		err := client_config.InitConfig()
+	if clientConfig == nil {
+		clientConfig = &config{}
+		err := clientConfig.InitConfig()
 		if err != nil {
 			return err
 		}
 	}
-	if !(client_config.verify_volumes) {
-		client_config.client = &Client{ctx: ctx, username: username, password: password}
+	if !(clientConfig.verifyVolumes) {
+		clientConfig.client = &Client{ctx: ctx, username: username, password: password}
 		return nil
 	} else {
-		connErr := generateSocket(ctx, client_config.socket_url, username, password)
+		connErr := generateSocket(ctx, clientConfig.socketUrl, username, password)
 		if connErr != nil {
 			return connErr
 		}
@@ -169,14 +169,14 @@ func Initialize(ctx context.Context, username string, password string) error {
 }
 
 func DeInitialize() {
-	if client_config != nil && client_config.client != nil {
-		client_config.client.Close()
-		client_config.client = nil
+	if clientConfig != nil && clientConfig.client != nil {
+		clientConfig.client.Close()
+		clientConfig.client = nil
 	}
 }
 
 func IsClientInitialized() bool {
-	if client_config != nil && client_config.client != nil {
+	if clientConfig != nil && clientConfig.client != nil {
 		return true
 	} else if defaultInitialize() == nil {
 		return true
@@ -186,25 +186,25 @@ func IsClientInitialized() bool {
 
 func CanVerifyVolumes() (bool, error) {
 	if !(IsClientInitialized()) {
-		return client_config.verify_volumes, errors.New("middleware could not be initialized")
+		return clientConfig.verifyVolumes, errors.New("middleware could not be initialized")
 	}
-	return client_config.verify_volumes, nil
+	return clientConfig.verifyVolumes, nil
 }
 
 func CanVerifyAttachPath() bool {
-	return client_config.verify_attached_path
+	return clientConfig.verifyAttachedPath
 }
 
 func CanVerifyLockedVolumes() bool {
-	return client_config.verify_locked_path
+	return clientConfig.verifyLockedPath
 }
 
 func GetIgnorePaths() []string {
-	return client_config.ignore_paths
+	return clientConfig.ignorePaths
 }
 
 func GetRootDataset() string {
-	return client_config.root_dataset
+	return clientConfig.appsDataset
 }
 
 func generateSocket(ctx context.Context, socketUrl string, username string, password string) error {
@@ -223,7 +223,7 @@ func generateSocket(ctx context.Context, socketUrl string, username string, pass
 			return loginErr
 		}
 	}
-	client_config.client = &Client{
+	clientConfig.client = &Client{
 		id:       connectionResp["session"].(string),
 		msg:      "method",
 		ctx:      ctx,
@@ -235,12 +235,12 @@ func generateSocket(ctx context.Context, socketUrl string, username string, pass
 }
 
 func Call(method string, params ...interface{}) (map[string]interface{}, error) {
-	m := client_config.client
+	m := clientConfig.client
 	resp, err := m.get(method, params...)
 	if err != nil {
 		connErr := SafeInitialize(m.ctx, m.username, m.password)
 		if connErr == nil {
-			m = client_config.client
+			m = clientConfig.client
 			resp, err = m.get(method, params...)
 			return resp, err
 		}

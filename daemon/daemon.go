@@ -756,7 +756,7 @@ func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.S
 	setDefaultMtu(config)
 	err = middleware.Initialize(ctx, "", "")
 	if err != nil {
-		logrus.Debug("Middleware could not initialized")
+		logrus.Debug("Middleware could not be initialized")
 		logrus.Debug(err)
 	}
 	registryService, err := registry.NewService(config.ServiceOptions)
