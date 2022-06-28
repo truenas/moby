@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/middleware"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/volume"
 )
@@ -111,6 +112,26 @@ func (p *linuxParser) validateMountConfigImpl(mnt *mount.Mount, validateBindSour
 		}
 	default:
 		return &errMountConfig{mnt, errors.New("mount type unknown")}
+	}
+	can_verify_volumes, err := middleware.CanVerifyVolumes()
+	if err == nil && mnt.Source != "" && can_verify_volumes {
+		err := ixMountValidation(mnt.Source)
+		if err != nil {
+			return err
+		}
+		if middleware.CanVerifyLockedvolumes() {
+			err := lockedpathValidation(mnt.Source)
+			if err != nil {
+				return err
+			}
+		}
+		if middleware.CanVerifyAttachPath() {
+			err := attachedPathValidation(mnt.Source)
+			if err != nil {
+				return err
+			}
+		}
+
 	}
 	return nil
 }
