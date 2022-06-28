@@ -55,6 +55,7 @@ import (
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/libcontainerd"
 	libcontainerdtypes "github.com/docker/docker/libcontainerd/types"
+	"github.com/docker/docker/middleware"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/docker/pkg/system"
@@ -753,7 +754,11 @@ func (daemon *Daemon) IsSwarmCompatible() error {
 // requests from the webserver.
 func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.Store) (daemon *Daemon, err error) {
 	setDefaultMtu(config)
-
+	err = middleware.Initialize(ctx, "", "")
+	if err != nil {
+		logrus.Debug("Middleware could not initialized")
+		logrus.Debug(err)
+	}
 	registryService, err := registry.NewService(config.ServiceOptions)
 	if err != nil {
 		return nil, err
@@ -1242,6 +1247,9 @@ func (daemon *Daemon) ShutdownTimeout() int {
 // Shutdown stops the daemon.
 func (daemon *Daemon) Shutdown() error {
 	daemon.shutdown = true
+	middleware.DeInitialize()
+	logrus.Debug("Middleware deinitialized")
+
 	// Keep mounts and networking running on daemon shutdown if
 	// we are to keep containers running and restore them.
 
