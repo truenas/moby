@@ -115,17 +115,18 @@ func (p *linuxParser) validateMountConfigImpl(mnt *mount.Mount, validateBindSour
 	}
 	canVerifyVolumes, err := middleware.CanVerifyVolumes()
 	if err == nil && mnt.Source != "" && canVerifyVolumes {
-		err := ixMountValidation(mnt.Source)
+		pathToBeIgnored := ignorePath(mnt.Source)
+		err := ixMountValidation(mnt.Source, pathToBeIgnored)
 		if err != nil {
 			return err
 		}
-		if middleware.CanVerifyLockedVolumes() {
+		if !pathToBeIgnored && middleware.CanVerifyLockedVolumes() {
 			err := lockedPathValidation(mnt.Source)
 			if err != nil {
 				return err
 			}
 		}
-		if middleware.CanVerifyAttachPath() {
+		if !pathToBeIgnored && middleware.CanVerifyAttachPath() {
 			err := attachedPathValidation(mnt.Source)
 			if err != nil {
 				return err
