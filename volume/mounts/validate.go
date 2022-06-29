@@ -55,16 +55,13 @@ func isIXVolumePath(path string, datasetPath string) bool {
 	return false
 }
 
-func ignorePath(path string, dataset string) bool {
-	ignorePaths := []string{"/etc/", "/sys/", "/proc/", "/var/lib/kubelet/pods/"}
+func ignorePath(path string) bool {
+	ignorePaths := []string{"/etc/", "/sys/", "/proc/", "/var/lib/kubelet/pods/", "/dev/", "/mnt/"}
 	ignorePaths = append(ignorePaths, middleware.GetIgnorePaths()...)
 	for _, igPath := range ignorePaths {
 		if strings.Index(path, igPath) == 0 {
 			return true
 		}
-	}
-	if isIXVolumePath(path, dataset) {
-		return true
 	}
 	return false
 }
@@ -75,6 +72,10 @@ func getAttachments(path string) []string {
 		attachmentsResults := attachments["result"].([]interface{})
 		var attachmentList []string
 		for _, attachmentEntry := range attachmentsResults {
+			serviceType := attachmentEntry.(map[string]interface{})["type"].(string)
+			if serviceType == "Chart Releases" && isIXVolumePath(path, middleware.GetRootDataset()) {
+				continue
+			}
 			attachmentList = append(attachmentList, attachmentEntry.(map[string]interface{})["type"].(string))
 		}
 		return attachmentList
@@ -83,10 +84,6 @@ func getAttachments(path string) []string {
 }
 
 func attachedPathValidation(path string) error {
-	datasetPath := middleware.GetRootDataset()
-	if ignorePath(path, datasetPath) {
-		return nil
-	}
 	attachmentsResults := getAttachments(path)
 	if attachmentsResults != nil && len(attachmentsResults) > 0 {
 		return errors.Errorf("Invalid mount path. %s. Following services uses this path: `%s`.", path, strings.Join(attachmentsResults[:], ", "))
@@ -107,15 +104,20 @@ func pathToList(path string) []string {
 
 func ixMountValidation(path string) error {
 	pathList := pathToList(path)
-	blockPath := []string{"/cluster/ctdb_shared_vol", "/cluster"}
-	if len(pathList) < 3 && pathList[0] == "mnt" {
-		return errors.Errorf("Invalid path %s. Mounting root dataset or path outside a pool is not allowed", path)
-	}
-	for _, blPath := range blockPath {
-		blPathLis := pathToList(blPath)
-		if reflect.DeepEqual(pathList, blPathLis) {
-			return errors.Errorf("Path %s is blocked and cannot be mounted.", path)
+	clusterBlockPath := []string{"/cluster/ctdb_shared_vol", "/cluster"}
+	if ignorePath(path) {
+		if len(pathList) < 3 && pathList[0] == "mnt" {
+			return errors.Errorf("Invalid path %s. Mounting root dataset or path outside a pool is not allowed", path)
 		}
+		return nil
+	} else if pathList[0] == "cluster" {
+		for _, blPath := range clusterBlockPath {
+			blPathLis := pathToList(blPath)
+			if reflect.DeepEqual(pathList, blPathLis) {
+				return errors.Errorf("Path %s is blocked and cannot be mounted.", path)
+			}
+		}
+		return nil
 	}
-	return nil
+	return errors.Errorf("%s path not allowed to be mounted", path)
 }
