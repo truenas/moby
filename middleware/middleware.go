@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync"
 
 	"nhooyr.io/websocket"
 )
@@ -17,6 +18,7 @@ type Client struct {
 	method   string
 	params   string
 	ctx      context.Context
+	lock     sync.Mutex
 }
 
 func HandleMapMarshal(data map[string]interface{}) ([]byte, error) {
@@ -136,14 +138,6 @@ func SafeInitialize(ctx context.Context, username string, password string) error
 	return nil
 }
 
-func defaultInitialize() error {
-	err := SafeInitialize(context.Background(), "", "")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func Initialize(ctx context.Context, username string, password string) error {
 	if clientConfig == nil {
 		clientConfig = &config{}
@@ -177,8 +171,6 @@ func DeInitialize() {
 
 func IsClientInitialized() bool {
 	if clientConfig != nil && clientConfig.client != nil {
-		return true
-	} else if defaultInitialize() == nil {
 		return true
 	}
 	return false
@@ -236,6 +228,7 @@ func generateSocket(ctx context.Context, socketUrl string, username string, pass
 
 func Call(method string, params ...interface{}) (map[string]interface{}, error) {
 	m := clientConfig.client
+	m.lock.Lock()
 	resp, err := m.get(method, params...)
 	if err != nil {
 		connErr := SafeInitialize(m.ctx, m.username, m.password)
@@ -246,6 +239,7 @@ func Call(method string, params ...interface{}) (map[string]interface{}, error) 
 		}
 		return nil, err
 	}
+	m.lock.Unlock()
 	return resp, nil
 }
 
