@@ -31,24 +31,24 @@ func errMissingField(name string) error {
 	return errors.Errorf("field %s must not be empty", name)
 }
 
-func lockedpathValidation(path string) error {
+func lockedPathValidation(path string) error {
 	call, err := middleware.Call("pool.dataset.path_in_locked_datasets", path)
 	if err == nil {
-		islocked, ok := call["result"].(bool)
-		if ok && islocked {
+		isLocked, ok := call["result"].(bool)
+		if ok && isLocked {
 			return errors.Errorf("Dataset path is locked")
 		}
 	}
 	return nil
 }
 
-func isIXvolumePath(path string, dataset_path string) bool {
-	release_path := filepath.Join("mnt", dataset_path, "releases")
-	if strings.Index(path, "/"+release_path) == 0 {
-		app_path := strings.Replace(path, "/"+release_path+"/", "", 1)
-		app_name := strings.Split(app_path, "/")[0]
-		volume_path := filepath.Join(release_path, app_name, "volumes", "ix_volumes")
-		if strings.Contains(path, "/"+volume_path) {
+func isIXVolumePath(path string, datasetPath string) bool {
+	releasePath := filepath.Join("mnt", datasetPath, "releases")
+	if strings.Index(path, "/"+releasePath) == 0 {
+		appPath := strings.Replace(path, "/"+releasePath+"/", "", 1)
+		appName := strings.Split(appPath, "/")[0]
+		volumePath := filepath.Join(releasePath, appName, "volumes", "ix_volumes")
+		if strings.Contains(path, "/"+volumePath) {
 			return true
 		}
 	}
@@ -56,14 +56,14 @@ func isIXvolumePath(path string, dataset_path string) bool {
 }
 
 func ignorePath(path string, dataset string) bool {
-	ignore_path := []string{"/etc/", "/sys/", "/proc/", "/var/lib/kubelet/pods/"}
-	ignore_path = append(ignore_path, middleware.GetIgnorePaths()...)
-	for _, ig_path := range ignore_path {
-		if strings.Index(path, ig_path) == 0 {
+	ignorePaths := []string{"/etc/", "/sys/", "/proc/", "/var/lib/kubelet/pods/"}
+	ignorePaths = append(ignorePaths, middleware.GetIgnorePaths()...)
+	for _, igPath := range ignorePaths {
+		if strings.Index(path, igPath) == 0 {
 			return true
 		}
 	}
-	if isIXvolumePath(path, dataset) {
+	if isIXVolumePath(path, dataset) {
 		return true
 	}
 	return false
@@ -72,29 +72,28 @@ func ignorePath(path string, dataset string) bool {
 func getAttachments(path string) []string {
 	attachments, err := middleware.Call("pool.dataset.attachments_with_path", path)
 	if err == nil {
-		attachments_results := attachments["result"].([]interface{})
-		fmt.Println("results:  ", attachments_results)
-		attachment_list := []string{}
-		for _, attach := range attachments_results {
-			attach_names := attach.(map[string]interface{})["attachments"].([]interface{})
-			for _, name := range attach_names {
-				attachment_list = append(attachment_list, name.(string))
+		attachmentsResults := attachments["result"].([]interface{})
+		var attachmentList []string
+		for _, attach := range attachmentsResults {
+			attachNames := attach.(map[string]interface{})["attachments"].([]interface{})
+			for _, name := range attachNames {
+				attachmentList = append(attachmentList, name.(string))
 			}
 		}
-		return attachment_list
+		return attachmentList
 	}
 	return nil
 }
 
 func attachedPathValidation(path string) error {
-	dataset_path := middleware.GetRootDataset()
-	if ignorePath(path, dataset_path) {
+	datasetPath := middleware.GetRootDataset()
+	if ignorePath(path, datasetPath) {
 		return nil
 	}
-	attachments_results := getAttachments(path)
-	if attachments_results != nil && len(attachments_results) > 0 {
+	attachmentsResults := getAttachments(path)
+	if attachmentsResults != nil && len(attachmentsResults) > 0 {
 		attach := ""
-		for _, pa := range attachments_results {
+		for _, pa := range attachmentsResults {
 			attach += pa + ","
 		}
 		return errors.Errorf("Invalid mount path. %s. Following app uses this path. `%s`.", path, attach)
@@ -103,26 +102,26 @@ func attachedPathValidation(path string) error {
 }
 
 func pathToList(path string) []string {
-	raw_path_list := strings.Split(path, "/")
-	process_path_list := []string{}
-	for _, name := range raw_path_list {
+	rawPathList := strings.Split(path, "/")
+	var processPathList []string
+	for _, name := range rawPathList {
 		if name != "" {
-			process_path_list = append(process_path_list, name)
+			processPathList = append(processPathList, name)
 		}
 	}
-	return process_path_list
+	return processPathList
 }
 
 func ixMountValidation(path string) error {
-	path_list := pathToList(path)
-	block_path := []string{"/cluster/ctdb_shared_vol", "/cluster"}
-	if len(path_list) < 3 && path_list[0] == "mnt" {
-		return errors.Errorf("Invalid path %s. Mounting a pool is not allowed", path)
+	pathList := pathToList(path)
+	blockPath := []string{"/cluster/ctdb_shared_vol", "/cluster"}
+	if len(pathList) < 3 && pathList[0] == "mnt" {
+		return errors.Errorf("Invalid path %s. Mounting root dataset or path outside a pool is not allowed", path)
 	}
-	for _, bl_path := range block_path {
-		bl_path_lis := pathToList(bl_path)
-		if reflect.DeepEqual(path_list, bl_path_lis) {
-			return errors.Errorf("Path %s is blocked.", path)
+	for _, blPath := range blockPath {
+		blPathLis := pathToList(blPath)
+		if reflect.DeepEqual(pathList, blPathLis) {
+			return errors.Errorf("Path %s is blocked and cannot be mounted.", path)
 		}
 	}
 	return nil

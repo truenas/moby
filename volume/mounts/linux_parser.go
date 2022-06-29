@@ -113,14 +113,14 @@ func (p *linuxParser) validateMountConfigImpl(mnt *mount.Mount, validateBindSour
 	default:
 		return &errMountConfig{mnt, errors.New("mount type unknown")}
 	}
-	can_verify_volumes, err := middleware.CanVerifyVolumes()
-	if err == nil && mnt.Source != "" && can_verify_volumes {
+	canVerifyVolumes, err := middleware.CanVerifyVolumes()
+	if err == nil && mnt.Source != "" && canVerifyVolumes {
 		err := ixMountValidation(mnt.Source)
 		if err != nil {
 			return err
 		}
 		if middleware.CanVerifyLockedVolumes() {
-			err := lockedpathValidation(mnt.Source)
+			err := lockedPathValidation(mnt.Source)
 			if err != nil {
 				return err
 			}
