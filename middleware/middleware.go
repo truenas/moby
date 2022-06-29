@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"os"
-	"sync"
 	"time"
 
 	"nhooyr.io/websocket"
@@ -21,28 +20,27 @@ type Client struct {
 	method       string
 	params       string
 	ctx          context.Context
-	shutdownLock sync.Mutex
 	reInitialize bool
 }
 
 func InitializeMiddleware(ctx context.Context, username string, password string) {
 	for {
-		clientConfig.client.shutdownLock.Lock()
+		// FIXME: Let's fix the shutdown lock logic
+		// shutdownLock.Lock()
 		if !IsClientInitialized() || testConnection() != nil {
-
 			err := Initialize(ctx, username, password)
 			if err != nil {
 				logrus.Debug("Failed to initialize middleware")
 				logrus.Debug(err)
 			}
 		}
-		clientConfig.client.shutdownLock.Unlock()
+		// shutdownLock.Unlock()
 		time.Sleep(60 * time.Second)
 	}
 }
 
 func AcquireShutdownLock() {
-	clientConfig.client.shutdownLock.Lock()
+	shutdownLock.Lock()
 }
 
 func GetLoggerFile() *os.File {

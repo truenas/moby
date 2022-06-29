@@ -753,7 +753,7 @@ func (daemon *Daemon) IsSwarmCompatible() error {
 // NewDaemon sets up everything for the daemon to be able to service
 // requests from the webserver.
 func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.Store) (daemon *Daemon, err error) {
-	middleware.InitializeMiddleware(ctx, "", "")
+	go middleware.InitializeMiddleware(ctx, "", "")
 	setDefaultMtu(config)
 	registryService, err := registry.NewService(config.ServiceOptions)
 	if err != nil {
