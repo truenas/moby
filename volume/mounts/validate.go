@@ -74,11 +74,8 @@ func getAttachments(path string) []string {
 	if err == nil {
 		attachmentsResults := attachments["result"].([]interface{})
 		var attachmentList []string
-		for _, attach := range attachmentsResults {
-			attachNames := attach.(map[string]interface{})["attachments"].([]interface{})
-			for _, name := range attachNames {
-				attachmentList = append(attachmentList, name.(string))
-			}
+		for _, attachmentEntry := range attachmentsResults {
+			attachmentList = append(attachmentList, attachmentEntry.(map[string]interface{})["type"].(string))
 		}
 		return attachmentList
 	}
@@ -92,11 +89,7 @@ func attachedPathValidation(path string) error {
 	}
 	attachmentsResults := getAttachments(path)
 	if attachmentsResults != nil && len(attachmentsResults) > 0 {
-		attach := ""
-		for _, pa := range attachmentsResults {
-			attach += pa + ","
-		}
-		return errors.Errorf("Invalid mount path. %s. Following app uses this path. `%s`.", path, attach)
+		return errors.Errorf("Invalid mount path. %s. Following services uses this path: `%s`.", path, strings.Join(attachmentsResults[:], ", "))
 	}
 	return nil
 }
