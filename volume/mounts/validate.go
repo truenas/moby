@@ -109,13 +109,14 @@ func pathToList(path string) []string {
 
 func ixMountValidation(path string) error {
 	pathList := pathToList(path)
-	clusterBlockPath := []string{"/cluster/ctdb_shared_vol", "/cluster"}
 	if ignorePath(path) {
-		if len(pathList) < 3 && pathList[0] == "mnt" {
+		// path list can be 0 if the path here was "/"
+		if len(pathList) != 0 && len(pathList) < 3 && pathList[0] == "mnt" {
 			return errors.Errorf("Invalid path %s. Mounting root dataset or path outside a pool is not allowed", path)
 		}
 		return nil
 	} else if pathList[0] == "cluster" {
+		clusterBlockPath := []string{"/cluster/ctdb_shared_vol", "/cluster"}
 		for _, blPath := range clusterBlockPath {
 			blPathLis := pathToList(blPath)
 			if reflect.DeepEqual(pathList, blPathLis) {
