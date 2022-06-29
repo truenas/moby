@@ -56,10 +56,15 @@ func isIXVolumePath(path string, datasetPath string) bool {
 }
 
 func ignorePath(path string) bool {
-	ignorePaths := []string{"/etc/", "/sys/", "/proc/", "/var/lib/kubelet/pods/", "/dev/", "/mnt/"}
+	// "/" and "/home/keys/" are added for openebs use only, regular containers can't mount "/" as we have validation
+	// already in place by docker elsewhere to prevent that from happening
+	if path == "/" {
+		return true
+	}
+	ignorePaths := []string{"/etc/", "/sys/", "/proc/", "/var/lib/kubelet/", "/dev/", "/mnt/", "/home/keys/", "/run/", "/var/run/", "/var/lock/", "/lock"}
 	ignorePaths = append(ignorePaths, middleware.GetIgnorePaths()...)
 	for _, igPath := range ignorePaths {
-		if strings.Index(path, igPath) == 0 {
+		if strings.Index(path, igPath) == 0 || path == strings.TrimRight(igPath, "/") {
 			return true
 		}
 	}
@@ -73,7 +78,7 @@ func getAttachments(path string) []string {
 		var attachmentList []string
 		for _, attachmentEntry := range attachmentsResults {
 			serviceType := attachmentEntry.(map[string]interface{})["type"].(string)
-			if serviceType == "Chart Releases" && isIXVolumePath(path, middleware.GetRootDataset()) {
+			if (serviceType == "Chart Releases" || serviceType == "Kubernetes") && isIXVolumePath(path, middleware.GetRootDataset()) {
 				continue
 			}
 			attachmentList = append(attachmentList, attachmentEntry.(map[string]interface{})["type"].(string))
@@ -86,7 +91,7 @@ func getAttachments(path string) []string {
 func attachedPathValidation(path string) error {
 	attachmentsResults := getAttachments(path)
 	if attachmentsResults != nil && len(attachmentsResults) > 0 {
-		return errors.Errorf("Invalid mount path. %s. Following services uses this path: `%s`.", path, strings.Join(attachmentsResults[:], ", "))
+		return errors.Errorf("Invalid mount path. %s. Following service(s) uses this path: `%s`.", path, strings.Join(attachmentsResults[:], ", "))
 	}
 	return nil
 }
