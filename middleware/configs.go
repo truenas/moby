@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -12,6 +13,7 @@ var (
 	configFile           = "docker_middleware.json"
 	clientConfig *config = nil
 	timeoutLimit         = 10 * time.Second
+	shutdownLock sync.Mutex
 )
 
 func getConfigDir() string {
