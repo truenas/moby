@@ -11,7 +11,7 @@ var (
 	configDir            = getConfigDir()
 	configFile           = "docker_middleware.json"
 	clientConfig *config = nil
-	timeoutLimit         = 8 * time.Second
+	timeoutLimit         = 10 * time.Second
 )
 
 func getConfigDir() string {
