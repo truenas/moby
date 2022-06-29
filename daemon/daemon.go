@@ -753,12 +753,8 @@ func (daemon *Daemon) IsSwarmCompatible() error {
 // NewDaemon sets up everything for the daemon to be able to service
 // requests from the webserver.
 func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.Store) (daemon *Daemon, err error) {
+	middleware.InitializeMiddleware(ctx, "", "")
 	setDefaultMtu(config)
-	err = middleware.Initialize(ctx, "", "")
-	if err != nil {
-		logrus.Debug("Middleware could not be initialized")
-		logrus.Debug(err)
-	}
 	registryService, err := registry.NewService(config.ServiceOptions)
 	if err != nil {
 		return nil, err
@@ -1247,8 +1243,9 @@ func (daemon *Daemon) ShutdownTimeout() int {
 // Shutdown stops the daemon.
 func (daemon *Daemon) Shutdown() error {
 	daemon.shutdown = true
+	middleware.AcquireShutdownLock()
 	middleware.DeInitialize()
-	logrus.Debug("Middleware deinitialized")
+	logrus.Debug("Middleware de-initialized")
 
 	// Keep mounts and networking running on daemon shutdown if
 	// we are to keep containers running and restore them.

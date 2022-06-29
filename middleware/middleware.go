@@ -4,21 +4,53 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/sirupsen/logrus"
+	"os"
 	"sync"
+	"time"
 
 	"nhooyr.io/websocket"
 )
 
 type Client struct {
-	id       string
-	username string
-	password string
-	msg      string
-	conn     *websocket.Conn
-	method   string
-	params   string
-	ctx      context.Context
-	lock     sync.Mutex
+	id           string
+	username     string
+	password     string
+	msg          string
+	conn         *websocket.Conn
+	method       string
+	params       string
+	ctx          context.Context
+	shutdownLock sync.Mutex
+	reInitialize bool
+}
+
+func InitializeMiddleware(ctx context.Context, username string, password string) {
+	for {
+		clientConfig.client.shutdownLock.Lock()
+		if !IsClientInitialized() || testConnection() != nil {
+
+			err := Initialize(ctx, username, password)
+			if err != nil {
+				logrus.Debug("Failed to initialize middleware")
+				logrus.Debug(err)
+			}
+		}
+		clientConfig.client.shutdownLock.Unlock()
+		time.Sleep(60 * time.Second)
+	}
+}
+
+func AcquireShutdownLock() {
+	clientConfig.client.shutdownLock.Lock()
+}
+
+func GetLoggerFile() *os.File {
+	openLogfile, err := os.OpenFile("/root/run.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		return nil
+	}
+	return openLogfile
 }
 
 func HandleMapMarshal(data map[string]interface{}) ([]byte, error) {
@@ -133,9 +165,8 @@ func SafeInitialize(ctx context.Context, username string, password string) error
 	err := Initialize(ctx, username, password)
 	if err != nil {
 		DeInitialize()
-		return err
 	}
-	return nil
+	return err
 }
 
 func Initialize(ctx context.Context, username string, password string) error {
@@ -146,10 +177,8 @@ func Initialize(ctx context.Context, username string, password string) error {
 			return err
 		}
 	}
-	if !(clientConfig.verifyVolumes) {
-		clientConfig.client = &Client{ctx: ctx, username: username, password: password}
-		return nil
-	} else {
+	clientConfig.client = &Client{ctx: ctx, username: username, password: password}
+	if clientConfig.verifyVolumes {
 		connErr := generateSocket(ctx, clientConfig.socketUrl, username, password)
 		if connErr != nil {
 			return connErr
@@ -228,19 +257,8 @@ func generateSocket(ctx context.Context, socketUrl string, username string, pass
 
 func Call(method string, params ...interface{}) (map[string]interface{}, error) {
 	m := clientConfig.client
-	m.lock.Lock()
 	resp, err := m.get(method, params...)
-	if err != nil {
-		connErr := SafeInitialize(m.ctx, m.username, m.password)
-		if connErr == nil {
-			m = clientConfig.client
-			resp, err = m.get(method, params...)
-			return resp, err
-		}
-		return nil, err
-	}
-	m.lock.Unlock()
-	return resp, nil
+	return resp, err
 }
 
 func (m *Client) get(method string, params ...interface{}) (map[string]interface{}, error) {
@@ -254,10 +272,7 @@ func (m *Client) get(method string, params ...interface{}) (map[string]interface
 		"params": params,
 	}
 	connResp, connErr := handleSocketCommunication(m.ctx, m.conn, data)
-	if connErr != nil {
-		return nil, connErr
-	}
-	return connResp, nil
+	return connResp, connErr
 }
 
 func (m *Client) Close() {
