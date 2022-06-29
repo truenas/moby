@@ -18,7 +18,7 @@ func getConfigDir() string {
 	if os.Getenv("DOCKER_MIDDLEWARE_CONFIG_DIR") != "" {
 		return os.Getenv("DOCKER_MIDDLEWARE_CONFIG_DIR")
 	}
-	return "/etc/default"
+	return "/etc"
 }
 
 type config struct {
