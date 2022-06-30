@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-func HandleMapMarshal(data map[string]interface{}) ([]byte, error) {
+func HandleMapMarshal(data []interface{}) ([]byte, error) {
 	jsonByteData, err := json.Marshal(data)
 	if err != nil {
 		return nil, errors.New("can't parse map object")

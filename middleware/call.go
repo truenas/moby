@@ -1,35 +1,30 @@
 package middleware
 
-import "errors"
+import (
+	"encoding/json"
+	"github.com/sirupsen/logrus"
+	"os/exec"
+)
 
-func Call(method string, params ...interface{}) (map[string]interface{}, error) {
-	m := clientConfig.client
-	resp, err := m.get(method, params...)
-	return resp, err
-}
-
-func (m *Client) get(method string, params ...interface{}) (map[string]interface{}, error) {
-	if m == nil {
-		return nil, errors.New("client is not initialized")
+func Call(method string, params ...interface{}) (interface{}, error) {
+	var args []string
+	args = append(args, method)
+	for _, entry := range params[1:] {
+		sanitized, err := json.Marshal(entry)
+		if err != nil {
+			logrus.Errorf("Failed to marshal parameters for middleware: %s", err)
+			return nil, err
+		}
+		args = append(args, string(sanitized[:]))
 	}
-	data := map[string]interface{}{
-		"id":     m.id,
-		"msg":    m.msg,
-		"method": method,
-		"params": params,
+	out, err := exec.Command(middlewareClientPath, args...).Output()
+	if err != nil {
+		logrus.Errorf("Middleware call to %s failed: %s", method, err)
 	}
-	connResp, connErr := handleSocketCommunication(m.ctx, m.conn, data)
-	return connResp, connErr
-}
-
-func testConnection() error {
-	call, errs := Call("core.ping")
-	if errs != nil {
-		return errs
+	var sanitizedResult []interface{}
+	err = json.Unmarshal([]byte(out), &sanitizedResult)
+	if err != nil {
+		logrus.Errorf("Failed to unmarshall middleware response for %s method: %s", method, err)
 	}
-	pong, ok := call["result"].(string)
-	if !(ok) && pong != "pong" {
-		return errors.New("received invalid response from middleware")
-	}
-	return nil
+	return sanitizedResult, err
 }

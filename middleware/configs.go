@@ -4,24 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
-	"time"
 )
-
-var (
-	configDir            = getConfigDir()
-	configFile           = "docker_middleware.json"
-	clientConfig *config = nil
-	timeoutLimit         = 10 * time.Second
-	shutdownLock sync.Mutex
-)
-
-func getConfigDir() string {
-	if os.Getenv("DOCKER_MIDDLEWARE_CONFIG_DIR") != "" {
-		return os.Getenv("DOCKER_MIDDLEWARE_CONFIG_DIR")
-	}
-	return "/etc"
-}
 
 type config struct {
 	socketUrl          string
@@ -105,9 +88,6 @@ func (c *config) InitConfig() error {
 }
 
 func CanVerifyVolumes() (bool, error) {
-	if !(IsClientInitialized()) {
-		return clientConfig.verifyVolumes, errors.New("middleware could not be initialized")
-	}
 	return clientConfig.verifyVolumes, nil
 }
 
