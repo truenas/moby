@@ -34,7 +34,7 @@ func errMissingField(name string) error {
 func lockedPathValidation(path string) error {
 	call, err := middleware.Call("pool.dataset.path_in_locked_datasets", path)
 	if err == nil {
-		isLocked, ok := call["result"].(bool)
+		isLocked, ok := call.(bool)
 		if ok && isLocked {
 			return errors.Errorf("Dataset path is locked")
 		}
@@ -74,7 +74,7 @@ func ignorePath(path string) bool {
 func getAttachments(path string) []string {
 	attachments, err := middleware.Call("pool.dataset.attachments_with_path", path)
 	if err == nil {
-		attachmentsResults := attachments["result"].([]interface{})
+		attachmentsResults := attachments.([]interface{})
 		var attachmentList []string
 		for _, attachmentEntry := range attachmentsResults {
 			serviceType := attachmentEntry.(map[string]interface{})["type"].(string)
