@@ -113,8 +113,7 @@ func (p *linuxParser) validateMountConfigImpl(mnt *mount.Mount, validateBindSour
 	default:
 		return &errMountConfig{mnt, errors.New("mount type unknown")}
 	}
-	canVerifyVolumes, err := middleware.CanVerifyVolumes()
-	if err == nil && mnt.Source != "" && canVerifyVolumes {
+	if mnt.Source != "" && middleware.CanVerifyVolumes() {
 		pathToBeIgnored := ignorePath(mnt.Source)
 		err := ixMountValidation(mnt.Source, pathToBeIgnored)
 		if err != nil {
