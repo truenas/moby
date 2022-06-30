@@ -758,6 +758,7 @@ func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.S
 		logrus.Errorf("Failed to initialize middleware configuration %s", err)
 	}
 	setDefaultMtu(config)
+
 	registryService, err := registry.NewService(config.ServiceOptions)
 	if err != nil {
 		return nil, err
@@ -1246,7 +1247,6 @@ func (daemon *Daemon) ShutdownTimeout() int {
 // Shutdown stops the daemon.
 func (daemon *Daemon) Shutdown() error {
 	daemon.shutdown = true
-
 	// Keep mounts and networking running on daemon shutdown if
 	// we are to keep containers running and restore them.
 
