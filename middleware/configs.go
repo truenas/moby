@@ -103,3 +103,26 @@ func (c *config) InitConfig() error {
 	c.ignorePaths = parseStringListValue("ignorePaths", configMap, []string{})
 	return nil
 }
+
+func CanVerifyVolumes() (bool, error) {
+	if !(IsClientInitialized()) {
+		return clientConfig.verifyVolumes, errors.New("middleware could not be initialized")
+	}
+	return clientConfig.verifyVolumes, nil
+}
+
+func CanVerifyAttachPath() bool {
+	return clientConfig.verifyAttachedPath
+}
+
+func CanVerifyLockedVolumes() bool {
+	return clientConfig.verifyLockedPath
+}
+
+func GetIgnorePaths() []string {
+	return clientConfig.ignorePaths
+}
+
+func GetRootDataset() string {
+	return clientConfig.appsDataset
+}

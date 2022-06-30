@@ -16,36 +16,6 @@ func GenerateSession(ctx context.Context, conn *websocket.Conn) (map[string]inte
 	return handleSocketCommunication(ctx, conn, connectionRequest)
 }
 
-func LoginSession(ctx context.Context, conn *websocket.Conn, id string, username string, password string) (map[string]interface{}, error) {
-	loginRequest := map[string]interface{}{
-		"id":     id,
-		"msg":    "method",
-		"method": "auth.login",
-		"params": []string{username, password},
-	}
-	connResp, connErr := handleSocketCommunication(ctx, conn, loginRequest)
-	if connErr != nil {
-		return nil, connErr
-	}
-	if !connResp["result"].(bool) {
-		return nil, errors.New("invalid credentials")
-	}
-
-	return connResp, nil
-}
-
-func testConnection() error {
-	call, errs := Call("core.ping")
-	if errs != nil {
-		return errs
-	}
-	pong, ok := call["result"].(string)
-	if !(ok) && pong != "pong" {
-		return errors.New("invalid credentials")
-	}
-	return nil
-}
-
 func socketCommunication(ctx context.Context, conn *websocket.Conn,
 	data map[string]interface{}, resp chan map[string]interface{}, err chan error) {
 	if conn == nil {
@@ -92,4 +62,25 @@ func handleSocketCommunication(ctx context.Context, conn *websocket.Conn, data m
 			return resp, nil
 		}
 	}
+}
+
+func generateSocket(ctx context.Context, socketUrl string, username string, password string) error {
+	conn, _, connErr := websocket.Dial(ctx, socketUrl, nil)
+	if connErr != nil {
+		return connErr
+	}
+	conn.SetReadLimit(32769 * 10)
+	connectionResp, connErr := GenerateSession(ctx, conn)
+	if connErr != nil {
+		return connErr
+	}
+	clientConfig.client = &Client{
+		id:       connectionResp["session"].(string),
+		msg:      "method",
+		ctx:      ctx,
+		conn:     conn,
+		username: username,
+		password: password,
+	}
+	return nil
 }
