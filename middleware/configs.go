@@ -9,7 +9,6 @@ import (
 )
 
 type config struct {
-	socketUrl          string
 	verifyVolumes      bool
 	verifyLockedPath   bool
 	verifyAttachedPath bool
@@ -60,7 +59,7 @@ func InitConfig() error {
 	if err != nil {
 		return err
 	}
-	requiredKeys := [3]string{"socketUrl", "appsDataset"}
+	requiredKeys := [2]string{"appsDataset", "verifyVolumes"}
 	for _, key := range requiredKeys {
 		if _, ok := configMap[key]; !ok {
 			errString := fmt.Sprintf("%s key must be specified", key)
@@ -69,9 +68,8 @@ func InitConfig() error {
 	}
 
 	clientConfig = &config{}
-	clientConfig.socketUrl = configMap["socketUrl"].(string)
 	clientConfig.appsDataset = configMap["appsDataset"].(string)
-	clientConfig.verifyVolumes = parseValue("verifyVolumes", configMap, true)
+	clientConfig.verifyVolumes = configMap["verifyVolumes"].(bool)
 	clientConfig.verifyLockedPath = parseValue("verifyLockedPath", configMap, true)
 	clientConfig.verifyAttachedPath = parseValue("verifyAttachedPath", configMap, true)
 	clientConfig.ignorePaths = parseStringListValue("ignorePaths", configMap, []string{})
