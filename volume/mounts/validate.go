@@ -77,7 +77,9 @@ func getAttachments(path string) []string {
 		var attachmentList []string
 		for _, attachmentEntry := range attachmentsResults {
 			serviceType := attachmentEntry.(map[string]interface{})["type"].(string)
-			if (serviceType == "Chart Releases" || serviceType == "Kubernetes") && isIXVolumePath(path, middleware.GetRootDataset()) {
+			// We filter out chart releases explicitly because this would otherwise not allow the app
+			// to mount any path as we would have that path attached to an application
+			if serviceType == "Chart Releases" || (serviceType == "Kubernetes" && isIXVolumePath(path, middleware.GetRootDataset())) {
 				continue
 			}
 			attachmentList = append(attachmentList, attachmentEntry.(map[string]interface{})["type"].(string))
