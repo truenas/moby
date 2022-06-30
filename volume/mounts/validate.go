@@ -64,7 +64,7 @@ func ignorePath(path string) bool {
 	ignorePaths := []string{"/etc/", "/sys/", "/proc/", "/var/lib/kubelet/", "/dev/", "/mnt/", "/home/keys/", "/run/", "/var/run/", "/var/lock/", "/lock"}
 	ignorePaths = append(ignorePaths, middleware.GetIgnorePaths()...)
 	for _, igPath := range ignorePaths {
-		if strings.Index(path, igPath) == 0 || path == strings.TrimRight(igPath, "/") {
+		if strings.HasPrefix(path, igPath) || path == strings.TrimRight(igPath, "/") {
 			return true
 		}
 	}

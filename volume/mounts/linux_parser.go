@@ -118,13 +118,13 @@ func (p *linuxParser) validateMountConfigImpl(mnt *mount.Mount, validateBindSour
 		if err != nil {
 			return err
 		}
-		if strings.Index("/mnt/", mnt.Source) == 0 && middleware.CanVerifyLockedVolumes() {
+		if strings.HasPrefix(mnt.Source, "/mnt/") && middleware.CanVerifyLockedVolumes() {
 			err := lockedPathValidation(mnt.Source)
 			if err != nil {
 				return err
 			}
 		}
-		if strings.Index("/mnt/", mnt.Source) == 0 && middleware.CanVerifyAttachPath() {
+		if strings.HasPrefix(mnt.Source, "/mnt/") && middleware.CanVerifyAttachPath() {
 			err := attachedPathValidation(mnt.Source)
 			if err != nil {
 				return err
