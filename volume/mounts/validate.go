@@ -34,8 +34,7 @@ func errMissingField(name string) error {
 func lockedPathValidation(path string) error {
 	call, err := middleware.Call("pool.dataset.path_in_locked_datasets", path)
 	if err == nil {
-		isLocked, ok := call.(bool)
-		if ok && isLocked {
+		if call.(bool) {
 			return errors.Errorf("Dataset path is locked")
 		}
 	}
