@@ -1,14 +1,15 @@
 package middleware
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 )
 
 type config struct {
 	socketUrl          string
-	client             *Client
 	verifyVolumes      bool
 	verifyLockedPath   bool
 	verifyAttachedPath bool
@@ -24,11 +25,11 @@ func (c *config) loadConfig() (map[string]interface{}, error) {
 		return nil, err
 	}
 	configMap := make(map[string]interface{})
-	err = HandleMapUnmarshal(string(data), &configMap)
+	err = json.Unmarshal([]byte(data), &configMap)
 	if err != nil {
-		return nil, err
+		logrus.Errorf("Failed to load configuration for middleware: %s", err)
 	}
-	return configMap, nil
+	return configMap, err
 }
 
 func parseValue(name string, configMap map[string]interface{}, defaultValue interface{}) interface{} {
@@ -62,28 +63,29 @@ func parseStringListValue(name string, configMap map[string]interface{}, default
 	return defaultValue
 }
 
-func (c *config) InitConfig() error {
-	configMap, err := c.loadConfig()
+func InitConfig() error {
+	clientConfig = &config{}
+	configMap, err := clientConfig.loadConfig()
 	if err != nil {
 		return err
 	}
 	value, ok := configMap["socketUrl"]
 	if ok {
-		c.socketUrl = value.(string)
+		clientConfig.socketUrl = value.(string)
 	} else {
 		return errors.New("socketURL must be specified")
 	}
 	value, ok = configMap["appsDataset"]
 	if ok {
-		c.appsDataset = value.(string)
+		clientConfig.appsDataset = value.(string)
 	} else {
 		return errors.New("apps (ix-applications) dataset complete name must be specified i.e tank/ix-applications")
 	}
 
-	c.verifyVolumes = parseBoolValue("verifyVolumes", configMap, true)
-	c.verifyLockedPath = parseBoolValue("verifyLockedPath", configMap, true)
-	c.verifyAttachedPath = parseBoolValue("verifyAttachedPath", configMap, true)
-	c.ignorePaths = parseStringListValue("ignorePaths", configMap, []string{})
+	clientConfig.verifyVolumes = parseBoolValue("verifyVolumes", configMap, true)
+	clientConfig.verifyLockedPath = parseBoolValue("verifyLockedPath", configMap, true)
+	clientConfig.verifyAttachedPath = parseBoolValue("verifyAttachedPath", configMap, true)
+	clientConfig.ignorePaths = parseStringListValue("ignorePaths", configMap, []string{})
 	return nil
 }
 
