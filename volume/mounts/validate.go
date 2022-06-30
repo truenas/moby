@@ -107,9 +107,9 @@ func pathToList(path string) []string {
 	return processPathList
 }
 
-func ixMountValidation(path string, pathToBeIgnored bool) error {
+func ixMountValidation(path string) error {
 	pathList := pathToList(path)
-	if pathToBeIgnored {
+	if ignorePath(path) {
 		// path list can be 0 if the path here was "/"
 		if len(pathList) != 0 && len(pathList) < 3 && pathList[0] == "mnt" {
 			return errors.Errorf("Invalid path %s. Mounting root dataset or path outside a pool is not allowed", path)
