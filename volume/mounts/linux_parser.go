@@ -3,11 +3,13 @@ package mounts // import "github.com/docker/docker/volume/mounts"
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/middleware"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/volume"
 )
@@ -111,6 +113,35 @@ func (p *linuxParser) validateMountConfigImpl(mnt *mount.Mount, validateBindSour
 		}
 	default:
 		return &errMountConfig{mnt, errors.New("mount type unknown")}
+	}
+	if mnt.Source != "" && middleware.CanVerifyVolumes() {
+		paths := map[string]string{
+			"path": mnt.Source,
+		}
+		realPath, err := filepath.EvalSymlinks(mnt.Source)
+		if err == nil && realPath != mnt.Source {
+			paths[fmt.Sprintf("path (real path of  %s)", mnt.Source)] = realPath
+		} else if err != nil {
+			logrus.Errorf("Unable to determine real path of %s for validation", mnt.Source)
+		}
+		for pathType, pathToTest := range paths {
+			err := ixMountValidation(pathToTest, pathType)
+			if err != nil {
+				return err
+			}
+			if strings.HasPrefix(mnt.Source, "/mnt/") && middleware.CanVerifyLockedVolumes() {
+				err := lockedPathValidation(pathToTest, pathType)
+				if err != nil {
+					return err
+				}
+			}
+			if strings.HasPrefix(mnt.Source, "/mnt/") && middleware.CanVerifyAttachPath() {
+				err := attachedPathValidation(pathToTest, pathType)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }
