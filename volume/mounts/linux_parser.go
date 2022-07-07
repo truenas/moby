@@ -3,7 +3,6 @@ package mounts // import "github.com/docker/docker/volume/mounts"
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -118,9 +117,9 @@ func (p *linuxParser) validateMountConfigImpl(mnt *mount.Mount, validateBindSour
 		paths := map[string]string{
 			"path": mnt.Source,
 		}
-		realPath, err := os.Readlink(mnt.Source)
+		realPath, err := filepath.EvalSymlinks(mnt.Source)
 		if err == nil {
-			paths["real path"] = realPath
+			paths[fmt.Sprintf("path (real path of  %s)", mnt.Source)] = realPath
 		}
 		for pathType, pathToTest := range paths {
 			err := ixMountValidation(pathToTest, pathType)
