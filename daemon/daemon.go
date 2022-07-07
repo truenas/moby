@@ -55,6 +55,7 @@ import (
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/libcontainerd"
 	libcontainerdtypes "github.com/docker/docker/libcontainerd/types"
+	"github.com/docker/docker/middleware"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/docker/pkg/system"
@@ -752,6 +753,10 @@ func (daemon *Daemon) IsSwarmCompatible() error {
 // NewDaemon sets up everything for the daemon to be able to service
 // requests from the webserver.
 func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.Store) (daemon *Daemon, err error) {
+	err = middleware.InitConfig()
+	if err != nil {
+		logrus.Errorf("Failed to initialize middleware configuration %s", err)
+	}
 	setDefaultMtu(config)
 
 	registryService, err := registry.NewService(config.ServiceOptions)
