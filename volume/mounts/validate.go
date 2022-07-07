@@ -31,11 +31,11 @@ func errMissingField(name string) error {
 	return errors.Errorf("field %s must not be empty", name)
 }
 
-func lockedPathValidation(path string) error {
+func lockedPathValidation(path string, pathType string) error {
 	call, err := middleware.Call("pool.dataset.path_in_locked_datasets", path)
 	if err == nil {
 		if call.(bool) {
-			return errors.Errorf("Dataset path is locked")
+			return errors.Errorf("Dataset %s %s is locked", path, pathType)
 		}
 	}
 	return nil
@@ -89,10 +89,10 @@ func getAttachments(path string) []string {
 	return nil
 }
 
-func attachedPathValidation(path string) error {
+func attachedPathValidation(path string, pathType string) error {
 	attachmentsResults := getAttachments(path)
 	if attachmentsResults != nil && len(attachmentsResults) > 0 {
-		return errors.Errorf("Invalid mount path. %s. Following service(s) uses this path: `%s`.", path, strings.Join(attachmentsResults[:], ", "))
+		return errors.Errorf("Invalid mount %s. %s. Following service(s) uses this path: `%s`.", pathType, path, strings.Join(attachmentsResults[:], ", "))
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func pathToList(path string) []string {
 	return processPathList
 }
 
-func ixMountValidation(path string) error {
+func ixMountValidation(path string, pathType string) error {
 	pathList := pathToList(path)
 	if ignorePath(path) {
 		// path list can be 0 if the path here was "/"
@@ -126,5 +126,5 @@ func ixMountValidation(path string) error {
 		}
 		return nil
 	}
-	return errors.Errorf("%s path not allowed to be mounted", path)
+	return errors.Errorf("%s %s not allowed to be mounted", path, pathType)
 }
