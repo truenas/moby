@@ -60,7 +60,21 @@ func ignorePath(path string) bool {
 	if path == "/" {
 		return true
 	}
-	ignorePaths := []string{"/etc/", "/sys/", "/proc/", "/var/lib/kubelet/", "/dev/", "/mnt/", "/home/keys/", "/run/", "/var/run/", "/var/lock/", "/lock"}
+	ignorePaths := []string{
+		"/etc/",
+		"/sys/",
+		"/proc/",
+		"/var/lib/kubelet/",
+		"/dev/",
+		"/mnt/",
+		"/home/keys/",
+		"/run/",
+		"/var/run/",
+		"/var/lock/",
+		"/lock",
+		"/usr/share/zoneinfo", // allow mounting localtime
+		"/usr/lib/os-release", // allow mounting /etc/os-release
+	}
 	ignorePaths = append(ignorePaths, middleware.GetIgnorePaths()...)
 	for _, igPath := range ignorePaths {
 		if strings.HasPrefix(path, igPath) || path == strings.TrimRight(igPath, "/") {
