@@ -84,8 +84,23 @@ func ignorePath(path string) bool {
 	return false
 }
 
+func contains(list []string, str string) bool {
+	for _, value := range list {
+		if value == str {
+			return true
+		}
+	}
+
+	return false
+}
+
 func getAttachments(path string) []string {
 	attachments, err := middleware.Call("pool.dataset.attachments_with_path", path)
+	allowedTypes := []string{
+		"Chart Releases",
+		"Rsync Task",
+		"Snapshot Task",
+	}
 	if err == nil {
 		attachmentsResults := attachments.([]interface{})
 		var attachmentList []string
@@ -93,7 +108,7 @@ func getAttachments(path string) []string {
 			serviceType := attachmentEntry.(map[string]interface{})["type"].(string)
 			// We filter out chart releases explicitly because this would otherwise not allow the app
 			// to mount any path as we would have that path attached to an application
-			if serviceType == "Chart Releases" || (serviceType == "Kubernetes" && isIXVolumePath(path, middleware.GetRootDataset())) {
+			if contains(allowedTypes, serviceType) || (serviceType == "Kubernetes" && isIXVolumePath(path, middleware.GetRootDataset())) {
 				continue
 			}
 			attachmentList = append(attachmentList, attachmentEntry.(map[string]interface{})["type"].(string))
