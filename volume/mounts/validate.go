@@ -3,7 +3,6 @@ package mounts // import "github.com/docker/docker/volume/mounts"
 import (
 	"fmt"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/docker/docker/api/types/mount"
@@ -146,12 +145,9 @@ func ixMountValidation(path string, pathType string) error {
 		}
 		return nil
 	} else if pathList[0] == "cluster" {
-		clusterBlockPath := []string{"/cluster/ctdb_shared_vol", "/cluster"}
-		for _, blPath := range clusterBlockPath {
-			blPathLis := pathToList(blPath)
-			if reflect.DeepEqual(pathList, blPathLis) {
-				return errors.Errorf("Path %s is blocked and cannot be mounted.", path)
-			}
+		validationErr, err := middleware.Call("chart.release.validate_cluster_path", path)
+		if validationErr != nil && err == nil {
+			return errors.Errorf(validationErr.([]interface{})[0].(string))
 		}
 		return nil
 	}
