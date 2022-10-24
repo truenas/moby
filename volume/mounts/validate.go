@@ -99,6 +99,7 @@ func getAttachments(path string) []string {
 		"Chart Releases",
 		"Rsync Task",
 		"Snapshot Task",
+		"Rsync Module",
 	}
 	if err == nil {
 		attachmentsResults := attachments.([]interface{})
