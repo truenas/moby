@@ -100,6 +100,7 @@ func getAttachments(path string) []string {
 		"Rsync Task",
 		"Snapshot Task",
 		"Rsync Module",
+		"CloudSync Task",
 	}
 	if err == nil {
 		attachmentsResults := attachments.([]interface{})
