@@ -95,3 +95,14 @@ func GetIgnorePaths() []string {
 func GetRootDataset() string {
 	return clientConfig.appsDataset
 }
+
+func IsPoolConfigured() bool {
+	resp, err := Call("kubernetes.config")
+	if err == nil {
+		pool_name := resp.(map[string]interface{})["pool"]
+		if pool_name != nil {
+			return true
+		}
+	}
+	return false
+}
