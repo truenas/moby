@@ -758,7 +758,10 @@ func NewDaemon(ctx context.Context, config *config.Config, pluginStore *plugin.S
 	err = middleware.InitConfig()
 	if err != nil {
 		logrus.Errorf("Failed to initialize middleware configuration %s", err)
+	} else if !middleware.IsPoolConfigured() {
+		return nil, fmt.Errorf("Kubernetes Pool is not initialized")
 	}
+
 	setDefaultMtu(config)
 
 	registryService, err := registry.NewService(config.ServiceOptions)
