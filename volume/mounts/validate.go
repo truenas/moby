@@ -29,8 +29,8 @@ func errMissingField(name string) error {
 }
 
 func hostPathValidation(path string) error {
-	validationErr, err := middleware.Call("chart.release.validate_host_source_path", path)
-	if err == nil && validationErr != nil {
+	validationErr, _ := middleware.Call("chart.release.validate_host_source_path", path)
+	if validationErr != nil {
 		return errors.Errorf(validationErr.(string))
 	}
 	return nil

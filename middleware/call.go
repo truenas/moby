@@ -32,6 +32,7 @@ func Call(method string, params ...interface{}) (interface{}, error) {
 
 	err = json.Unmarshal([]byte(out), &sanitizedResult)
 	if err != nil {
+		sanitizedResult = string(out)
 		logrus.Errorf("Failed to unmarshall middleware response for %s method with response %s: %s", method, out, err)
 	}
 
